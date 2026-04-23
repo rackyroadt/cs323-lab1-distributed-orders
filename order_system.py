@@ -1,11 +1,13 @@
 from mpi4py import MPI
+import time      
+import random      
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
 if rank == 0:
-    # ===== MASTER (the sportsbook server) =====
+    # MASTER
     bet_slips = [
         {"id": 1001, "pick": "Lakers -5.5 vs Warriors"},
         {"id": 1002, "pick": "Celtics ML vs Heat"},
@@ -24,14 +26,20 @@ if rank == 0:
         comm.send(slip, dest=worker_rank)
         print(f"[Sportsbook] Sent slip #{slip['id']} to server {worker_rank}")
 
-    # Poison pill: tell each worker to shut down
+    # Poison pill
     for worker_rank in range(1, size):
         comm.send(None, dest=worker_rank)
 
 else:
-    # ===== WORKER (a validation server) =====
     while True:
         slip = comm.recv(source=0)
         if slip is None:
             break
-        print(f"[Server {rank}] Validating slip #{slip['id']}: {slip['pick']}")
+
+    
+        processing_time = random.uniform(1, 3)
+        print(f"[Server {rank}] Validating slip #{slip['id']}: {slip['pick']} (will take {processing_time:.2f}s)")
+        time.sleep(processing_time)
+        print(f"[Server {rank}] Finished slip #{slip['id']}")
+        
+        
